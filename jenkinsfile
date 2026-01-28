@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+
+    environment {
+        ACR_NAME = "tfacraksdemo2380"
+        IMAGE_NAME = "flask-demo"
+        ACR_LOGIN_SERVER = "tfacraksdemo2380.azurecr.io"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git credentialsId: 'github-token',
+                    url: 'https://github.com/aksnag/project1-cicd-aks.git',
+                    branch: 'main'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                  docker build -t ${IMAGE_NAME}:latest .
+                '''
+            }
+        }
+
+        stage('Login to ACR') {
+            steps {
+                sh '''
+                  az acr login --name ${ACR_NAME}
+                '''
+            }
+        }
+
+        stage('Tag Image') {
+            steps {
+                sh '''
+                  docker tag ${IMAGE_NAME}:latest ${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Push Image to ACR') {
+            steps {
+                sh '''
+                  docker push ${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Deploy to AKS') {
+            steps {
+                sh '''
+                  kubectl apply -f k8s/deployment.yaml
+                  kubectl apply -f k8s/service.yaml
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline Failed. Check logs."
+        }
+    }
+}
+
