@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    return "Hello from Flask running on AKS via Jenkins CI/CD 🚀"
+    return "Flask  app is Running successfully on Azure Aks+Jenkins CI/CD!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
